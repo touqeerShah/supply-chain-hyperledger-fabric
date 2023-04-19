@@ -52,11 +52,10 @@ async function main(arr) {
     // Get the contract from the network.
     const contract = network.getContract("hf");
 
-
     let result = await contract
-      .createTransaction("createDocument")
+      .createTransaction("updateCustomerEntityCount")
       .setEndorsingPeers(myOrgPeers)
-      .submit(arr);
+      .submit();
     console.log("result", result);
     var response_object = {};
     var response = JSON.parse(result.toString());
@@ -98,15 +97,14 @@ async function main(arr) {
   }
 }
 
-
-check()
+check();
 async function check() {
-
   for (let index = 40; index < 60; index++) {
     var arr =
-      '{"documentId": "documentId.toString()' + index + '","documentName": "documentName","purpose": "purpose","uri": "uri","startData": "1","expirationDate": "1","startBlock": "1","endBlock": "1","creator": "web3ProviderState.address","ownerSignature": "voucher","parties": [1,2]}';
+      '{"documentId": "documentId.toString()' +
+      index +
+      '","documentName": "documentName","purpose": "purpose","uri": "uri","startData": "1","expirationDate": "1","startBlock": "1","endBlock": "1","creator": "web3ProviderState.address","ownerSignature": "voucher","parties": [1,2]}';
 
     await main(arr);
-
   }
 }

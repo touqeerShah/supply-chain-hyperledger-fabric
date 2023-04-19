@@ -134,18 +134,13 @@ export class BaseRepository<T extends RawMaterialEntity> {
    * transction before add into blockchain
    */
     public async updateRawMaterialEntityCount(privateCollection: string) {
-        const bufferData = await this.contextProvider.get("rawCount", privateCollection);
-        let documentCount: RawMaterialEntityCount;
-        if (bufferData.length === 0) {
-            documentCount = { count: 0 }
 
-        } else {
-            documentCount = JSON.parse(bufferData.toString())
-        }
-        documentCount.count = documentCount.count + 1
+        let documentCount: RawMaterialEntityCount = await this.getRawMaterialEntityCount(privateCollection);
+        documentCount.count++
 
-        // const documentCount: RawMaterialEntityCount = JSON.parse(bufferData.toString())
-        let buffer = Buffer.from(JSON.stringify(JSON.stringify(documentCount)));
+        // const documentCount: ProductionEntityCount = JSON.parse(bufferData.toString())
+        let buffer = Buffer.from(JSON.stringify(documentCount));
+        console.log("buffer 2", documentCount);
 
         // here we call function to put data into blockchain
         await this.contextProvider.put("rawCount", buffer, privateCollection);

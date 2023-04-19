@@ -10,6 +10,7 @@ export class CustomerEntity extends BaseEntity {
     deliveryData: string;
     quantity: string;
     status: string
+
 }
 
 

@@ -37,13 +37,15 @@ export class BaseRepository<T extends CustomerEntity> {
       */
     public async getCustomerEntityCount(privateCollection: string): Promise<CustomerEntityCount> {
         const bufferData = await this.contextProvider.get("customerCount", privateCollection);
-        let documentCount: CustomerEntityCount;
         if (bufferData.length === 0) {
-            documentCount = { count: 0 }
+            return { count: 0 }
 
-        } else {
-            documentCount = JSON.parse(bufferData.toString())
         }
+        console.log("bufferData.toString()", bufferData, bufferData.toString());
+
+        const documentCount: CustomerEntityCount =
+            bufferData.length !== 0 ? JSON.parse(bufferData.toString()) : null;
+
         return documentCount;
     }
     /**
@@ -51,18 +53,13 @@ export class BaseRepository<T extends CustomerEntity> {
    * transction before add into blockchain
    */
     public async updateCustomerEntityCount(privateCollection: string) {
-        const bufferData = await this.contextProvider.get("customerCount", privateCollection);
-        let documentCount: CustomerEntityCount;
-        if (bufferData.length === 0) {
-            documentCount = { count: 0 }
+        let documentCount: CustomerEntityCount = await this.getCustomerEntityCount(privateCollection);
 
-        } else {
-            documentCount = JSON.parse(bufferData.toString())
-        }
-        documentCount.count = documentCount.count + 1
+        documentCount.count++
 
         // const documentCount: ProductionEntityCount = JSON.parse(bufferData.toString())
-        let buffer = Buffer.from(JSON.stringify(JSON.stringify(documentCount)));
+        let buffer = Buffer.from(JSON.stringify(documentCount));
+        console.log("buffer 2", documentCount);
 
         // here we call function to put data into blockchain
         await this.contextProvider.put("customerCount", buffer, privateCollection);

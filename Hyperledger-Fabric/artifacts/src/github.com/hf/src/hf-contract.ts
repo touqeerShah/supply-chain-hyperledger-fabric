@@ -542,6 +542,22 @@ export class HFContract extends Contract {
         return requestJson;
     }
     /**
+    * this function is get details of site
+    * siteObject = '{"siteid":"pharmaTrace_786"}'
+    * @param ctx 
+    * @param userObject  object contain site id
+    * @returns 
+    */
+    @Transaction()
+    public async updateCustomerEntityCount(
+        ctx: Context,
+    ) {
+
+        const documentProvider = new CustomerProvider(ctx); // create object provider
+        let requestJson = await documentProvider.updateCustomerEntityCount();
+
+    }
+    /**
      * this function is get details of site
      * siteObject = '{"siteid":"pharmaTrace_786"}'
      * @param ctx 

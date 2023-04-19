@@ -1,31 +1,23 @@
 [
     {
-        "name": "DocumentOrg1MSP",
-        "policy": "OR('Org1MSP.member')",
+        "name": "CustomerOrg1MSP",
+        "policy": "OR('Org1MSP.member','Org2MSP.member')",
         "requiredPeerCount": 0,
         "maxPeerCount": 2,
         "blockToLive": 0,
         "memberOnlyRead": true
     },
     {
-        "name": "UserVerificationOrg1MSP",
-        "policy": "OR('Org1MSP.member')",
+        "name": "ProductionOrg1MSP",
+        "policy": "OR('Org1MSP.member','Org2MSP.member')",
         "requiredPeerCount": 0,
         "maxPeerCount": 2,
         "blockToLive": 0,
         "memberOnlyRead": true
     },
     {
-        "name": "VerificationEntityOrg1MSP",
-        "policy": "OR('Org1MSP.member')",
-        "requiredPeerCount": 0,
-        "maxPeerCount": 2,
-        "blockToLive": 0,
-        "memberOnlyRead": true
-    },
-    {
-        "name": "DocumentOrg2MSP",
-        "policy": "OR('Org2MSP.member')",
+        "name": "RawMaterialOrg1MSP",
+        "policy": "OR('Org1MSP.member','Org2MSP.member')",
         "requiredPeerCount": 0,
         "maxPeerCount": 2,
         "blockToLive": 0,

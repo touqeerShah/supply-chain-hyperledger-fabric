@@ -6,7 +6,7 @@ export class ProductionEntity extends BaseEntity {
     date: string
     productionDepartmentEmployerName: string
     warehouseDeptEmployerName: string
-    PurchaseOrderNumber: string
+    purchaseOrderNumber: string
     customerName: string
     productName: string
     startProductionDate?: string
@@ -24,6 +24,10 @@ export class ProductionEntity extends BaseEntity {
 }
 
 export class ProductionFinishedArg {
+    startProductionDate: string
+    mixTheOil: string
+    fillBottle: string
+    sprayCoileer: string
     batchesNumber: string
     barcode: string
     batchSize: string

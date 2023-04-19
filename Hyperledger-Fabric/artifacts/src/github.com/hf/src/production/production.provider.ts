@@ -81,7 +81,7 @@ export class ProductionProvider {
         productionEntity.productionDepartmentEmployerName = _roductionEntity.productionDepartmentEmployerName;
         productionEntity.warehouseDeptEmployerName = _roductionEntity.warehouseDeptEmployerName;
         productionEntity.productName = _roductionEntity.productName;
-        productionEntity.PurchaseOrderNumber = _roductionEntity.PurchaseOrderNumber;
+        productionEntity.purchaseOrderNumber = _roductionEntity.purchaseOrderNumber;
         productionEntity.customerName = _roductionEntity.customerName;
 
 
@@ -228,6 +228,11 @@ export class ProductionProvider {
         }
 
         let productionData: ProductionEntity = response;
+        productionData.startProductionDate = productionFinishedArg.startProductionDate
+        productionData.mixTheOil = productionFinishedArg.mixTheOil
+        productionData.fillBottle = productionFinishedArg.fillBottle
+        productionData.sprayCoileer = productionFinishedArg.sprayCoileer
+
         productionData.barcode = productionFinishedArg.barcode
         productionData.batchSize = productionFinishedArg.batchSize
         productionData.isComplete = productionFinishedArg.isComplete

@@ -70,6 +70,15 @@ export class CustomerProvider {
         return await this.userRepository.getCustomerEntityCount("Customer" + mspID);
     }
     /**
+* This function is  get detials of production
+* @paramtransactionId 
+* @returns 
+*/
+    public async updateCustomerEntityCount() {
+        let mspID = this.userRepository.getMSPID();
+        return await this.userRepository.updateCustomerEntityCount("Customer" + mspID);
+    }
+    /**
       * function return status of document not all details 
       * @paramtransactionId 
       * @returns 
