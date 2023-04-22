@@ -28,6 +28,12 @@ type Customer = {
     status: string
 
 }
+export type Customers = {
+    customerId: string;
+    key: string;
+
+
+}
 
 
 type RawMaterial = {

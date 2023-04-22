@@ -116,49 +116,56 @@ async function consumeInvoke() {
           }
           if (isLoaded) {
             isLoaded = false;
-            console.log(
-              "2.collrollerObject ==>",
-              collrollerObject.requestData.parameters
-            );
-
-            await invoke(
-              collrollerObject.requestData.userId,
-              collrollerObject.apiConfig.data.channel,
-              collrollerObject.apiConfig.data.contractName,
-              collrollerObject.apiConfig.data.functionName,
-              collrollerObject.requestData.parameters,
-              collrollerObject.networkConfig.data
-            )
-              .then(async (value) => {
-                console.log("value", value);
-
-                await updateTransaction({
-                  status:
-                    value.status == 200
-                      ? "Transaction Successfull"
-                      : "Transaction Fail",
-                  error: value,
-                  uuid: data.uuid,
-                });
-                // if (value.status == 200) {
-                channel.ack(msg);
-                isLoaded = true;
-                channel.recover();
-                // }
-                console.log("after transaction !", data.uuid);
-                // isLoaded = true;
-              })
-              .catch(async (err) => {
-                console.log(err);
-                await updateTransaction({
-                  status: "Transaction Fail",
-                  error: err,
-                  uuid: data.uuid,
-                });
-                channel.ack(msg);
-                channel.recover();
-                isLoaded = true;
+            console.log("2.collrollerObject ==>", collrollerObject);
+            if (collrollerObject.status != 200) {
+              await updateTransaction({
+                status: "Transaction Fail",
+                error: collrollerObject.message,
+                uuid: data.uuid,
               });
+              channel.ack(msg);
+              channel.recover();
+              isLoaded = true;
+            } else {
+              await invoke(
+                collrollerObject.requestData.userId,
+                collrollerObject.apiConfig.data.channel,
+                collrollerObject.apiConfig.data.contractName,
+                collrollerObject.apiConfig.data.functionName,
+                collrollerObject.requestData.parameters,
+                collrollerObject.networkConfig.data
+              )
+                .then(async (value) => {
+                  console.log("value", value);
+
+                  await updateTransaction({
+                    status:
+                      value.status == 200
+                        ? "Transaction Successfull"
+                        : "Transaction Fail",
+                    error: value,
+                    uuid: data.uuid,
+                  });
+                  // if (value.status == 200) {
+                  channel.ack(msg);
+                  isLoaded = true;
+                  channel.recover();
+                  // }
+                  console.log("after transaction !", data.uuid);
+                  // isLoaded = true;
+                })
+                .catch(async (err) => {
+                  console.log(err);
+                  await updateTransaction({
+                    status: "Transaction Fail",
+                    error: err,
+                    uuid: data.uuid,
+                  });
+                  channel.ack(msg);
+                  channel.recover();
+                  isLoaded = true;
+                });
+            }
           } else {
             // setInterval(() => {
             //   channel.recover();

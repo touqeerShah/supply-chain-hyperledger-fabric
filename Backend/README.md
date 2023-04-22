@@ -20,3 +20,6 @@ wscat -c "ws://ae92a3e258a1e4201ae868ffa18aabaa-638756542.eu-central-1.elb.amazo
    "name": "createdAt-json-index",
    "type": "json"
 }
+
+
+

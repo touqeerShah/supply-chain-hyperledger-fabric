@@ -87,11 +87,12 @@ export class RawMaterialProvider {
         rawMaterial.StickerAndBarcode = _rawMaterial.StickerAndBarcode;
         rawMaterial.cartonOrBoxNumber = _rawMaterial.cartonOrBoxNumber;
         rawMaterial.rawMaterialNote = _rawMaterial.rawMaterialNote;
-        rawMaterial.receiverNote = "";
 
 
         console.log("RawMaterial", rawMaterial)
         let response = await this.rawMaterialValidators.CreateRawMaterialEntity(rawMaterial);
+        rawMaterial.receiverNote = "";
+
         if (typeof response === 'string') {
             // 👇️ myVar has type string here
             return response;

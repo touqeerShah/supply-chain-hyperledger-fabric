@@ -19,7 +19,6 @@ export class RawMaterialEntityValidation {
       StickerAndBarcode: Joi.string().required(),
       cartonOrBoxNumber: Joi.string().required(),
       rawMaterialNote: Joi.string().required(),
-
     })
 
     try {

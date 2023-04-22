@@ -13,7 +13,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 import { useEffect, useCallback, useState } from "react";
-
+import { Response } from "../../class/backendRequest";
+import { Customers } from "./../../class/document"
 
 import { post } from "../../utils";
 
@@ -25,9 +26,9 @@ export default function CreateRawMaterial() {
   let [rawMaterialId, setRawMaterialId] = useState("");
   let [purchaseOrderNumber, setPurchaseOrderNumber] = useState("")
   let [date, setDate] = useState("")
-  let [customerName, setCustomerName] = useState("")
+  let [customerName, setCustomerName] = useState(0)
 
-  let [customerNames, setCustomerNames] = useState("")
+  let [customerNames, setCustomerNames] = useState<Partial<Customers[]>>([])
   let [productName, setProductName] = useState("")
   let [glassNumber, setGlassNumber] = useState("")
   let [sprayKollerNumber, setSprayKollerNumber] = useState("")
@@ -42,25 +43,136 @@ export default function CreateRawMaterial() {
   const formOptions = { resolver: yupResolver(validationSchema) };
   const { register, handleSubmit, formState } = useForm(formOptions);
   useEffect(() => {
+    let fetch = async () => {
 
+
+      let response: Partial<Response> = await post("api/get", {
+        data: JSON.stringify({
+          transactionCode: "002",
+          apiName: "getCustomerByQuery",
+          parameters: {
+            query: {
+              "selector": {
+                "customerId": {
+                  "$gt": null
+                }
+              }, "fields": ["customerId"],
+              "sort": [
+                {
+                  "createdAt": "desc"
+                }
+              ]
+            },
+          },
+          userId: "user2",
+          organization: "org1"
+        })
+      });
+      console.log("All customer ", response);
+      if (response && response.data && response.status == 200) {
+        response.data.pop()
+        console.log("subArray", response.data);
+
+        setCustomerNames(response.data)
+
+      }
+    }
+    if (customerNames.length == 0) {
+      fetch()
+    }
 
   }, [])
 
 
 
   const submit = useCallback(async function () {
-    try {
-
-    } catch (error: any) {
-      console.log(error);
-
-      // console.log(error.message.substring(0, error.message.indexOf("("))); // "Hello"
-      // toast.error(error.message.substring(0, error.message.indexOf("(")));
-
+    if (customerNames.length == 0) {
+      toast.error("Create Customer First")
       return;
     }
+    console.log("==> ", "rawMaterialId", rawMaterialId, date, purchaseOrderNumber, rawMaterialNote, coverNumber, cartonOrBoxNumber);
 
-  }, []);
+    if (rawMaterialId != "" && date != "" && purchaseOrderNumber != "" && rawMaterialNote != "" && coverNumber != "" && cartonOrBoxNumber != "") {
+      try {
+        setSpinnerProcess(true)
+        console.log("---- > ", {
+          rawMaterialId: rawMaterialId,
+          date: date,
+          purchaseOrderNumber: purchaseOrderNumber,
+          customerName: customerNames[customerName]?.customerId,
+          productName: productName,
+          glassNumber: glassNumber,
+          sprayKollerNumber: sprayKollerNumber,
+          coverNumber: coverNumber,
+          stickerAndBarcode: stickerAndBarcode,
+          cartonOrBoxNumber: cartonOrBoxNumber,
+          rawMaterialNote: rawMaterialNote,
+          receiverNote: ""
+        });
+
+        let response: Partial<Response> = await post("api/get", {
+          data: JSON.stringify({
+            transactionCode: "002",
+            apiName: "existsRawMaterial",
+            parameters: {
+              rawMaterialId: rawMaterialId,
+            },
+            userId: "user2",
+            organization: "org1"
+          })
+        });
+        console.log("response", response);
+        if (response.status === 200 && !response.data && customerNames) {
+          response = await post("api/addQueue", {
+            data: JSON.stringify({
+              transactionCode: "002",
+              apiName: "createRawMaterial",
+              parameters: {
+                rawMaterialId: rawMaterialId,
+                date: date,
+                purchaseOrderNumber: purchaseOrderNumber,
+                customerName: customerNames[customerName]?.customerId,
+                productName: productName,
+                glassNumber: glassNumber,
+                sprayKollerNumber: sprayKollerNumber,
+                coverNumber: coverNumber,
+                StickerAndBarcode: stickerAndBarcode,
+                cartonOrBoxNumber: cartonOrBoxNumber,
+                rawMaterialNote: rawMaterialNote,
+                receiverNote: "empty"
+              },
+              userId: "user2",
+              organization: "org1"
+            })
+          });
+          console.log("response", response);
+
+          if (response.status === 200) {
+            toast.success("Successfully Created !")
+            router.push("/rawmaterial/raw-material-list")
+          } else {
+            toast.error(response.message)
+            setSpinnerProcess(false)
+
+          }
+
+        } else {
+          toast.error(response.message)
+          setSpinnerProcess(false)
+
+        }
+
+      } catch (error: any) {
+        console.log(error);
+        setSpinnerProcess(false)
+        toast.error("Server Issue")
+
+        return;
+      }
+    }
+
+
+  }, [rawMaterialId, date, purchaseOrderNumber, customerName, rawMaterialNote, coverNumber, cartonOrBoxNumber,]);
 
 
   const myRef: React.LegacyRef<HTMLInputElement> = React.createRef();
@@ -120,17 +232,21 @@ export default function CreateRawMaterial() {
                     onChange={(e: React.FormEvent<HTMLSelectElement>) => {
                       console.log("e.currentTarget.value", e.currentTarget.value);
 
-                      setCustomerName(e.currentTarget.value)
+                      setCustomerName(parseInt(e.currentTarget.value))
 
                       // handleChange(e, props.id)
                     }}>
                     <option value="" disabled >Select Customer</option>
-                    <option value="ForSignature">For Signature</option>
-                    <option value="SignByMe">Sign By Me</option>
+
+                    {customerNames &&
+                      customerNames.map((item: any, i) => (
+                        <option key={i} value={i}>{item.customerId}</option>
 
 
+                      ))}
                   </select>
                 </div>
+
               </div>
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
@@ -239,7 +355,7 @@ export default function CreateRawMaterial() {
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     defaultValue=""
                     onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                      setProductName(e.currentTarget.value);
+                      setCoverNumber(e.currentTarget.value);
                     }}
                   />
                 </div>
@@ -277,7 +393,7 @@ export default function CreateRawMaterial() {
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     defaultValue=""
                     onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                      setProductName(e.currentTarget.value);
+                      setCartonOrBoxNumber(e.currentTarget.value);
                     }}
                   />
                 </div>
@@ -295,7 +411,7 @@ export default function CreateRawMaterial() {
                     defaultValue=""
                     rows={4} cols={50}
                     onChange={(e: any) => {
-                      setPurchaseOrderNumber(e.currentTarget.value);
+                      setRawMaterialNote(e.currentTarget.value);
 
                     }}
                   />
@@ -313,14 +429,14 @@ export default function CreateRawMaterial() {
                   >
                     {spinnerProcess && <FontAwesomeIcon icon={faSpinner} className="animate-spin" />} &nbsp;&nbsp;
 
-                    Create
+                    Create Raw Material
                   </button>
                 </div>
               </div>
             </div>
           </form>
-        </div>
+        </div >
       </>
-    </div>
+    </div >
   );
 }

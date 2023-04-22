@@ -21,51 +21,9 @@ export default function CreateAllCustomer(props: any) {
   const [currentPage, setCurrentPage] = useState(1)
 
   const [totalRecord, setTotalRecord] = useState(0)
-  // let options: number[] = []
   const [options, setOptions] = useState<number[]>([])
 
-  // let getDocumentData = async (documentRequestType: string) => {
-  //   if (web3ProviderState.web3Provider && web3ProviderState.address) {
-  //     let address: string = web3ProviderState.address
-  //     const isExist = await subgraphClient.query({
-  //       query: REDEEM_USER_NFT,
-  //       variables: {
-  //         userAddress: address.toString(),
-  //       },
-  //     });
-  //     let tokenId: number = isExist.data?.issueDigitalIdentities[0].tokenId
-  //     setTokenId(tokenId)
-  //     let query = {}
-  //     if (documentRequestType == "Owner") {
-  //       query = { "selector": { "creator": address } }
-  //     } else if (documentRequestType == "ForSignature") {
-  //       console.log("hereemksdmkaldmnkaldklaskd");
 
-  //       query = { "selector": { "singers": { "$elemMatch": { "tokenId": parseInt(tokenId.toString()), "signature": "" } } } }
-  //     } else {
-  //       query = { "selector": { "singers": { "$elemMatch": { "tokenId": parseInt(tokenId.toString()), "signature": { "$gt": null } } } } }
-  //     }
-  //     console.log(documentRequestType, "query", query);
-
-  //     let response = await post("api/get", {
-  //       data: JSON.stringify({
-  //         transactionCode: "002",
-  //         apiName: "getByQuery",
-  //         parameters: {
-  //           query: query
-  //         },
-  //         userId: "user1",
-  //         organization: "org1"
-  //       })
-  //     })
-  //     if (response.status == 200) {
-  //       console.log("response", response.data.slice(0, response.data.length - 1));
-
-  //       setMyDocuments(response.data.slice(0, response.data.length - 1))
-  //     }
-
-  //   }
-  // }
   useEffect(() => {
     console.log("currentPage", currentPage);
 

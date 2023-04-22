@@ -35,7 +35,7 @@ export class HFContract extends Contract {
         * @returns 
         */
     @Transaction()
-    public async getDocumentCount(
+    public async getRawMaterialEntityCount(
         ctx: Context,
     ): Promise<RawMaterialEntityCount | string> {
 
@@ -62,7 +62,7 @@ export class HFContract extends Contract {
         let requestJson = JSON.parse(userObject);
 
         const documentProvider = new RawMaterialProvider(ctx); // create object provider
-        requestJson = await documentProvider.existsRawMaterial(requestJson.documentId);
+        requestJson = await documentProvider.existsRawMaterial(requestJson.rawMaterialId);
         if (typeof requestJson === 'string') {
             // 👇️ myVar has type string here
             return requestJson;
@@ -87,7 +87,7 @@ export class HFContract extends Contract {
         let requestJson = JSON.parse(userObject);
 
         const documentProvider = new RawMaterialProvider(ctx); // create object provider
-        requestJson = await documentProvider.getRawMaterialDetails(requestJson.documentId);
+        requestJson = await documentProvider.getRawMaterialDetails(requestJson.rawMaterialId);
         if (typeof requestJson === 'string') {
             // 👇️ myVar has type string here
             return requestJson;
