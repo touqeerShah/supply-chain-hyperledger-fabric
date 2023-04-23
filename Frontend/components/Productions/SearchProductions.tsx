@@ -7,7 +7,12 @@ import { toast } from "react-toastify";
 import { ellipseAddress } from '../../lib/utilities'
 import { useEffect, useState } from "react";
 import { ProductionsEntity } from '../../class/document'
-
+import * as Yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm } from "react-hook-form";
+import { post } from "../../utils";
+import { Response } from "../../class/backendRequest";
+import { useRouter } from 'next/router'
 
 // components
 
@@ -20,7 +25,6 @@ export default function SearchRawMaterial() {
   const [productionDetails, setProductionDetails] = React.useState<Partial<ProductionsEntity>>();
 
   const [production, setProduction] = React.useState("");
-  const [pin, setPin] = React.useState("");
   let [startProductionDate, setStartProductionDate] = useState("")
   let [mixTheOil, setMixTheOil] = useState("")
   let [fillBottle, setFillBottle] = useState("")
@@ -33,10 +37,134 @@ export default function SearchRawMaterial() {
   let [issuedByDate, setIssuedByDate] = useState("")
   let [QAckhDate, setQAckhDate] = useState("")
   let color = "light"
-  useEffect(() => {
+  const validationSchema = Yup.object().shape({
+    // image: Yup.string().required("NFG image is required"),
+  });
+  const formOptions = { resolver: yupResolver(validationSchema) };
+  const { register, handleSubmit, formState } = useForm(formOptions);
+  let [isSubmited, setIsSubmited] = useState(false)
+  let [showFeild, setShowFeild] = useState(false)
+
+  const update = useCallback(async function () {
+
+    setIsSubmited(true)
+    if (productionDetails?.batchesNumber == "") {
+      toast.error("Search record First")
+    }
+    if (startProductionDate != "" && startProductionDate != "" && mixTheOil != "" && fillBottle != "" && sprayCoileer != "" && barcode != "" && batchSize != "" && mfgDate != "" && issuedByDate != "" && QAckhDate != "") {
+      try {
+        setSpinnerProcess(true)
 
 
-  }, [])
+        let response: Partial<Response> = await post("api/get", {
+          data: JSON.stringify({
+            transactionCode: "002",
+            apiName: "existsProduction",
+            parameters: {
+              batchesNumber: productionDetails?.batchesNumber,
+            },
+            userId: "user2",
+            organization: "org1"
+          })
+        });
+        console.log("response", response);
+        if (response.status === 200 && response.data) {
+          response = await post("api/addQueue", {
+            data: JSON.stringify({
+              transactionCode: "002",
+              apiName: "finishProduct",
+              parameters: {
+                batchesNumber: productionDetails?.batchesNumber,
+                startProductionDate: startProductionDate,
+                mixTheOil: mixTheOil,
+                fillBottle: fillBottle,
+                sprayCoileer: sprayCoileer,
+                barcode: barcode,
+                batchSize: batchSize,
+                isComplete: isComplete == "false" ? false : true,
+                mfgDate: mfgDate,
+                expDate: expDate,
+                issuedByDate: issuedByDate,
+                QAckhDate: QAckhDate
+              },
+              userId: "user2",
+              organization: "org1"
+            })
+          });
+          console.log("response", response);
+
+          if (response.status === 200) {
+            // toast.success("Successfully Created !")
+            // router.reload()
+          } else {
+            toast.error(response.message)
+            setSpinnerProcess(false)
+
+          }
+
+        } else {
+          toast.error(response.message)
+          setSpinnerProcess(false)
+          setIsSubmited(false)
+
+        }
+
+      } catch (error: any) {
+        console.log(error);
+        setIsSubmited(false)
+        setSpinnerProcess(false)
+        toast.error("Server Issue")
+
+        return;
+      }
+    } else {
+      toast.warning("All Fields are Required")
+    }
+
+
+  }, [startProductionDate, mixTheOil, fillBottle, sprayCoileer, barcode, batchSize, isComplete, mfgDate, expDate, issuedByDate, QAckhDate]);
+  const search = useCallback(async function () {
+    try {
+
+      if (production != "") {
+        setSpinnerProcess(true)
+
+
+        let response: Partial<Response> = await post("api/get", {
+          data: JSON.stringify({
+            transactionCode: "002",
+            apiName: "getProductionDetails",
+            parameters: {
+              batchesNumber: production.trim(),
+            },
+            userId: "user2",
+            organization: "org1"
+          })
+        });
+        console.log("response", response);
+        if (response.status === 200 && response.data) {
+          setShowFeild(true)
+          setProductionDetails(response.data)
+          setSpinnerProcess(false)
+
+        } else {
+          setShowFeild(false)
+          let temp: Partial<ProductionsEntity> = {}
+          setProductionDetails(temp)
+          toast.warn(response.message)
+          setSpinnerProcess(false)
+        }
+      } else {
+        toast.warning("Batch Number is Required")
+      }
+    } catch (error: any) {
+      console.log(error);
+      setSpinnerProcess(false)
+      toast.error("Server Issue")
+      return;
+    }
+  }, [production]);
+
 
   return (
     <div className="relative border-2 flex flex-col min-w-0 break-words w-full mt-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
@@ -63,70 +191,57 @@ export default function SearchRawMaterial() {
             </div>
           </div>
           <div className="block w-full overflow-x-auto">
-            <div className="flex flex-wrap">
-              <div className="w-full lg:w-9/12 px-4">
-                <div className="relative w-full mb-3">
-                  <label
-                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                    htmlFor="grid-password"
-                  >
-                    {""}&nbsp;
-                  </label>
-                  <input
-                    type="text"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    defaultValue=""
-                    placeholder="Customer Id / Order Number"
-                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                      setProduction(e.currentTarget.value);
-                    }}
-                    required
-                  />
+            <form
+              id="create-choose-type-single"
+              onSubmit={handleSubmit(search)}
+            >
+              <div className="flex flex-wrap">
+                <div className="w-full lg:w-9/12 px-4">
+                  <div className="relative w-full mb-3">
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                      htmlFor="grid-password"
+                    >
+                      {""}&nbsp;
+                    </label>
+                    <input
+                      type="text"
+                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                      defaultValue=""
+                      placeholder="Batch Number"
+                      onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        setProduction(e.currentTarget.value);
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="w-full lg:w-3/12 px-4">
+                  <div className="relative w-full mb-3">
+                    <label
+                      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                      htmlFor="grid-password"
+                    >
+
+                    </label>
+                    <button
+                      className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                      type="submit"
+                    >
+                      {spinnerProcess && <FontAwesomeIcon icon={faSpinner} className="animate-spin" />} &nbsp;&nbsp;
+
+                      Search
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="w-full lg:w-3/12 px-4">
-                <div className="relative w-full mb-3">
-                  <label
-                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                    htmlFor="grid-password"
-                  >
+            </form>
 
-                  </label>
-                  <button
-                    className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    type="submit"
-                  >
-                    {spinnerProcess && <FontAwesomeIcon icon={faSpinner} className="animate-spin" />} &nbsp;&nbsp;
-
-                    Search
-                  </button>
-                </div>
-              </div>
-            </div>
             {/* Projects table */}
             <table className="items-center w-full bg-transparent border-collapse">
               <thead>
                 <tr>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    Search Result
-                  </th>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    {"         "}&nbsp;
-                  </th>
+
 
                 </tr>
               </thead>
@@ -138,14 +253,14 @@ export default function SearchRawMaterial() {
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Batches Number : {productionDetails?.batchesNumber}
+                    Batches Number  : {productionDetails?.batchesNumber}
                   </td>
                   <td className={
                     "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Production Department Employer Name :                {productionDetails?.productionDepartmentEmployerName}
+                    Production Department Employer Name  :                {productionDetails?.productionDepartmentEmployerName}
 
                   </td>
 
@@ -197,100 +312,100 @@ export default function SearchRawMaterial() {
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
                     Purchase Order Number :{productionDetails?.purchaseOrderNumber}
                   </td>
-                  <td className={
+                  {productionDetails?.startProductionDate && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Cover Number:  {productionDetails?.startProductionDate}
+                    Start Production Date:  {productionDetails?.startProductionDate}
                   </td>
-
+                  }
                 </tr>
                 <tr>
 
-                  <td className={
+                  {productionDetails?.mixTheOil && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Sticker And Barcode :{productionDetails?.mixTheOil}
-                  </td>
-                  <td className={
+                    Mix The Oil :{productionDetails?.mixTheOil}
+                  </td>}
+                  {productionDetails?.fillBottle && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Carton Or BoxNumber:  {productionDetails?.fillBottle}
-                  </td>
+                    Fill Bottle:  {productionDetails?.fillBottle}
+                  </td>}
 
                 </tr>
                 <tr>
 
-                  <td className={
+                  {productionDetails?.sprayCoileer && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    RawMaterial Note :{productionDetails?.sprayCoileer}
-                  </td>
-                  <td className={
+                    Spray Coileer :{productionDetails?.sprayCoileer}
+                  </td>}
+                  {productionDetails?.batchSize && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    RawMaterial Note :{productionDetails?.batchSize}
-                  </td>
+                    Batch Size :{productionDetails?.batchSize}
+                  </td>}
                 </tr>
                 <tr>
 
-                  <td className={
+                  {productionDetails?.barcode && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Receiver Note :{productionDetails?.barcode}
-                  </td>
-                  <td className={
+                    Barcode :{productionDetails?.barcode}
+                  </td>}
+                  {productionDetails?.isComplete && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Receiver Note :{productionDetails?.isComplete}
-                  </td>
+                    IsComplete :{productionDetails?.isComplete}
+                  </td>}
                 </tr>
                 <tr>
 
-                  <td className={
+                  {productionDetails?.mfgDate && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Receiver Note :{productionDetails?.mfgDate}
-                  </td>
-                  <td className={
+                    Mfg Date :{productionDetails?.mfgDate}
+                  </td>}
+                  {productionDetails?.expDate && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Receiver Note :{productionDetails?.expDate}
-                  </td>
+                    Exp Date :{productionDetails?.expDate}
+                  </td>}
                 </tr>
                 <tr>
 
-                  <td className={
+                  {productionDetails?.issuedByDate && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Receiver Note :{productionDetails?.issuedByDate}
-                  </td>
-                  <td className={
+                    Issued By Date :{productionDetails?.issuedByDate}
+                  </td>}
+                  {productionDetails?.QAckhDate && <td className={
                     "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
                     Receiver Note :{productionDetails?.QAckhDate}
-                  </td>
+                  </td>}
                 </tr>
 
                 <tr>
@@ -303,29 +418,6 @@ export default function SearchRawMaterial() {
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
                     Created By :{productionDetails?.createdBy}
                   </td>
-                  <td className={
-                    "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
-                    (color === "light"
-                      ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                      : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                    Updated By :{productionDetails?.updatedBy}
-
-                  </td>
-
-                </tr>
-
-
-                <tr>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    Updated At : {productionDetails?.updatedAt}
-                  </th>
                   <th
                     className={
                       "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
@@ -339,7 +431,17 @@ export default function SearchRawMaterial() {
 
                 </tr>
 
+
                 <tr>
+
+                  <td className={
+                    "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
+                    (color === "light"
+                      ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+                      : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
+                    Updated By :{productionDetails?.updatedBy}
+
+                  </td>
                   <th
                     className={
                       "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
@@ -348,7 +450,24 @@ export default function SearchRawMaterial() {
                         : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
                     }
                   >
-                    <div className="w-full lg:w-full ">
+                    Updated At : {productionDetails?.updatedAt}
+                  </th>
+
+                </tr>
+
+
+              </tbody>
+            </table>
+            <form
+              id="create-choose-type-single"
+              onSubmit={handleSubmit(update)}
+            >
+              {!productionDetails?.startProductionDate && showFeild &&
+
+                <>
+                  <div className="flex pt-8 flex-wrap">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -366,16 +485,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -393,19 +504,10 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                </tr>
 
-                <tr>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -423,16 +525,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -441,7 +535,7 @@ export default function SearchRawMaterial() {
                           Spray Coileer
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           defaultValue=""
                           onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -450,19 +544,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                </tr>
-                <tr>
-                  <th
 
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -471,7 +554,7 @@ export default function SearchRawMaterial() {
                           Barcode
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           defaultValue=""
                           onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -480,25 +563,17 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                           htmlFor="grid-password"
                         >
-                          BatchSize
+                          Batch Size
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           defaultValue=""
                           onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -507,18 +582,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                </tr>
-                <tr>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -526,28 +591,27 @@ export default function SearchRawMaterial() {
                         >
                           IsComplete
                         </label>
-                        <input
-                          type="boolean"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          defaultValue=""
-                          onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                            setIsComplete(e.currentTarget.value);
-                          }}
-                        />
+
+                        <select className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          name="lunchStatus" id="challenge"
+
+                          onChange={(e: React.FormEvent<HTMLSelectElement>) => {
+                            console.log("e.currentTarget.value", e.currentTarget.value);
+
+                            setIsComplete((e.currentTarget.value))
+
+                            // handleChange(e, props.id)
+                          }}>
+                          <option value="" disabled >Select Is Completed</option>
+                          <option value={"false"}  >No</option>
+                          <option value={"true"}  >Yes</option>
+
+
+                        </select>
                       </div>
                     </div>
-                  </th>
 
-                  <th
-                    colSpan={2}
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -565,18 +629,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                </tr>
-                <tr>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -594,15 +648,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                  <th
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }>
-                    <div className="w-full lg:w-full ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -620,19 +667,8 @@ export default function SearchRawMaterial() {
                         />
                       </div>
                     </div>
-                  </th>
-                </tr>
-                <tr>
-                  <th
-                    colSpan={2}
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="w-full lg:w-6/12 ">
+
+                    <div className="w-full lg:w-6/12 px-4 ">
                       <div className="relative w-full mb-3">
                         <label
                           className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -651,40 +687,28 @@ export default function SearchRawMaterial() {
                       </div>
                     </div>
 
-                  </th>
-                </tr>
-                <tr>
-                  <th
-                    colSpan={2}
-                    className={
-                      "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                      (color === "light"
-                        ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                        : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                    }
-                  >
-                    <div className="flex items-center justify-center flex-wrap">
-                      <div className="w-3/12  lg:w-12/12 ">
-                        <div className="relative  center mb-3">
-                          <button
-                            className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            type="submit"
-                          >
-                            {spinnerProcess && <FontAwesomeIcon icon={faSpinner} className="animate-spin" />} &nbsp;&nbsp;
+                  </div>
 
-                            Updated
-                          </button>
-                        </div>
+                  <div className="flex items-center justify-center flex-wrap">
+                    <div className="w-3/12  lg:w-12/12 px-4">
+                      <div className="relative  center mb-3">
+                        <button
+                          className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          type="submit"
+                          disabled={isSubmited}
+                        >
+
+                          {spinnerProcess && <> <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> &nbsp;</>}
+
+                          Update
+                        </button>
                       </div>
                     </div>
-                  </th>
+                  </div>
 
-
-                </tr>
-
-
-              </tbody>
-            </table>
+                </>
+              }
+            </form>
 
 
 

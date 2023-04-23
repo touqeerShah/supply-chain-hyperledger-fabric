@@ -31,10 +31,11 @@ type Customer = {
 export type Customers = {
     customerId: string;
     key: string;
-
-
 }
-
+export type RawMaterials = {
+    productName: string;
+    key: string;
+}
 
 type RawMaterial = {
     rawMaterialId: string

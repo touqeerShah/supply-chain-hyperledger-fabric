@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useApolloClient } from "@apollo/client";
 import PropTypes from "prop-types";
 import {
@@ -28,6 +28,23 @@ export default function CreateAllCustomer(props: any) {
     console.log("currentPage", currentPage);
 
   }, [currentPage])
+  const next = useCallback(async function () {
+    let temp: number = currentPage;
+    temp++;
+    if (temp < pageNo) {
+      setCurrentPage(temp)
+      setTotalRecord(0)
+    }
+
+  }, [])
+  const previous = useCallback(async function () {
+    let temp: number = currentPage;
+    temp--
+    if (temp > 0) {
+      setCurrentPage(temp)
+      setTotalRecord(0)
+    }
+  }, [])
   useEffect(() => {
     let fetch = async () => {
       let response: Partial<Response> = await post("api/get", {
@@ -37,7 +54,7 @@ export default function CreateAllCustomer(props: any) {
           parameters: {
 
           },
-          userId: "user1",
+          userId: "user2",
           organization: "org1"
         })
       });
@@ -46,10 +63,10 @@ export default function CreateAllCustomer(props: any) {
       if (response.status === 200 && response.data.count > 0) {
         setTotalRecord(response.data.count)
 
-        setPageNo(Math.ceil(response.data.count / 20))
-        console.log("response.data.count % 20", response.data.count / 20, "Math.ceil(response.data.count / 20)", Math.ceil(response.data.count / 20));
+        setPageNo(Math.ceil(response.data.count / 25))
+        console.log("response.data.count % 25", response.data.count / 25, "Math.ceil(response.data.count / 25)", Math.ceil(response.data.count / 25));
         let options: number[] = []
-        for (let index = 0; index < Math.ceil(response.data.count / 20); index++) {
+        for (let index = 0; index < Math.ceil(response.data.count / 25); index++) {
           options.push(index + 1)
         }
         setOptions(options)
@@ -69,10 +86,10 @@ export default function CreateAllCustomer(props: any) {
                     "createdAt": "desc"
                   }
                 ],
-                "skip": ((currentPage - 1) * 20)
+                "skip": ((currentPage - 1) * 25)
               },
             },
-            userId: "user1",
+            userId: "user2",
             organization: "org1"
           })
         });
@@ -88,7 +105,7 @@ export default function CreateAllCustomer(props: any) {
     if (totalRecord == 0) {
       fetch()
     }
-  }, [])
+  }, [totalRecord])
 
   return (
     <>
@@ -196,7 +213,8 @@ export default function CreateAllCustomer(props: any) {
             <div className="relative  center mb-3">
               <button
                 className="border-0  p-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded  text-sm shadow focus:outline-none focus:ring w-3/12 ease-linear transition-all duration-150"
-                disabled >
+                onClick={() => { previous() }}
+              >
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
 
@@ -221,7 +239,8 @@ export default function CreateAllCustomer(props: any) {
               </select>
               <button
                 className="border-0 p-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded  text-sm shadow focus:outline-none focus:ring w-3/12 ease-linear transition-all duration-150"
-                disabled >
+                onClick={() => { next() }}
+              >
                 <FontAwesomeIcon icon={faArrowRight} />
               </button>
             </div>

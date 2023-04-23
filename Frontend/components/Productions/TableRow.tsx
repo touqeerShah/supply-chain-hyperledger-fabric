@@ -51,7 +51,7 @@ export default function AddRow({
                 showModal={showModal}
                 setShowModal={setShowModal}
                 color={"light"}
-                rawMaterialEntity={item as ProductionsEntity}
+                ProductionsEntity={item as ProductionsEntity}
             />
         </>
     );

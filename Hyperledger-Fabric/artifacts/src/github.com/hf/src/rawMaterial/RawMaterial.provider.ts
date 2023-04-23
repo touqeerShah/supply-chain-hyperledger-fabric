@@ -27,7 +27,7 @@ export class RawMaterialProvider {
 
     /**
      * function return status of rawMaterial not all details 
-     * @paramtransactionId 
+     * @param transactionId 
      * @returns 
      */
     public async getByQuery(query: string): Promise<any[] | string> {

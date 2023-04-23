@@ -13,6 +13,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 import { useEffect, useCallback, useState } from "react";
+import { Response } from "../../class/backendRequest";
+import { Customers, RawMaterials } from "./../../class/document"
 
 
 import { post } from "../../utils";
@@ -28,8 +30,12 @@ export default function CreateProductions() {
   let [warehouseDeptEmployerName, setWarehouseDeptEmployerName] = useState("")
 
   let [purchaseOrderNumber, setPurchaseOrderNumber] = useState("")
-  let [customerName, setCustomerName] = useState("")
-  let [productName, setProductName] = useState("")
+  let [customerName, setCustomerName] = useState(0)
+
+  let [customerNames, setCustomerNames] = useState<Partial<Customers[]>>([])
+
+  let [productName, setProductName] = useState(0)
+  let [productNames, setProductNames] = useState<Partial<RawMaterials[]>>([])
 
 
   const validationSchema = Yup.object().shape({
@@ -38,25 +44,154 @@ export default function CreateProductions() {
   const formOptions = { resolver: yupResolver(validationSchema) };
   const { register, handleSubmit, formState } = useForm(formOptions);
   useEffect(() => {
+    let fetch = async () => {
 
+
+      let response: Partial<Response> = await post("api/get", {
+        data: JSON.stringify({
+          transactionCode: "002",
+          apiName: "getCustomerByQuery",
+          parameters: {
+            query: {
+              "selector": {
+                "customerId": {
+                  "$gt": null
+                }
+              }, "fields": ["customerId"],
+              "sort": [
+                {
+                  "createdAt": "desc"
+                }
+              ]
+            },
+          },
+          userId: "user2",
+          organization: "org1"
+        })
+      });
+      console.log("All customer ", response);
+      if (response && response.data && response.status == 200) {
+        response.data.pop()
+        console.log("subArray", response.data);
+
+        setCustomerNames(response.data)
+
+      }
+      response = await post("api/get", {
+        data: JSON.stringify({
+          transactionCode: "002",
+          apiName: "getRawMaterialByQuery",
+          parameters: {
+            query: {
+              "selector": {
+                "$and": [{
+                  "rawMaterialId": {
+                    "$gt": null
+                  }
+                }, {
+                  "receiverNote": {
+                    "$gt": ""
+                  }
+                }]
+              }, "fields": ["productName"],
+              "sort": [
+                {
+                  "createdAt": "desc"
+                }
+              ]
+            },
+          },
+          userId: "user2",
+          organization: "org1"
+        })
+      });
+      console.log("All productName ", response);
+      if (response.status == 200) {
+        response.data.pop()
+        console.log("subArray", response.data);
+
+        setProductNames(response.data)
+      }
+    }
+    if (customerNames.length == 0 || productNames.length == 0) {
+      fetch()
+    }
 
   }, [])
 
 
 
   const submit = useCallback(async function () {
-    try {
-
-    } catch (error: any) {
-      console.log(error);
-
-      // console.log(error.message.substring(0, error.message.indexOf("("))); // "Hello"
-      // toast.error(error.message.substring(0, error.message.indexOf("(")));
-
+    if (customerNames.length == 0) {
+      toast.error("Create Customer First")
+      return;
+    }
+    if (productNames.length == 0) {
+      toast.error("Raw Material First")
       return;
     }
 
-  }, []);
+    if (batchesNumber != "" && date != "" && purchaseOrderNumber != "" && productionDepartmentEmployerName != "" && warehouseDeptEmployerName != "") {
+      try {
+
+        let response: Partial<Response> = await post("api/get", {
+          data: JSON.stringify({
+            transactionCode: "002",
+            apiName: "existsProduction",
+            parameters: {
+              batchesNumber: batchesNumber,
+            },
+            userId: "user2",
+            organization: "org1"
+          })
+        });
+        console.log("response", response);
+        if (response.status === 200 && !response.data && customerNames) {
+          response = await post("api/addQueue", {
+            data: JSON.stringify({
+              transactionCode: "002",
+              apiName: "createProductionEntity",
+              parameters: {
+                batchesNumber: batchesNumber,
+                date: date,
+                purchaseOrderNumber: purchaseOrderNumber,
+                customerName: customerNames[customerName]?.customerId,
+                productName: productNames[productName]?.productName,
+                productionDepartmentEmployerName: productionDepartmentEmployerName,
+                warehouseDeptEmployerName: warehouseDeptEmployerName
+              },
+              userId: "user2",
+              organization: "org1"
+            })
+          });
+          console.log("response", response);
+
+          if (response.status === 200) {
+            toast.success("Successfully Created !")
+            router.push("/production/production-list")
+          } else {
+            toast.error(response.message)
+            setSpinnerProcess(false)
+
+          }
+
+        } else {
+          toast.error(response.message)
+          setSpinnerProcess(false)
+
+        }
+
+      } catch (error: any) {
+        console.log(error);
+        setSpinnerProcess(false)
+        toast.error("Server Issue")
+
+        return;
+      }
+    }
+
+
+  }, [batchesNumber, date, purchaseOrderNumber, productName, customerName, productionDepartmentEmployerName, warehouseDeptEmployerName]);
 
 
   const myRef: React.LegacyRef<HTMLInputElement> = React.createRef();
@@ -116,14 +251,18 @@ export default function CreateProductions() {
                     onChange={(e: React.FormEvent<HTMLSelectElement>) => {
                       console.log("e.currentTarget.value", e.currentTarget.value);
 
-                      setCustomerName(e.currentTarget.value)
+                      setCustomerName(parseInt(e.currentTarget.value))
 
                       // handleChange(e, props.id)
                     }}>
                     <option value="" disabled >Select Customer</option>
-                    <option value="ForSignature">For Signature</option>
-                    <option value="SignByMe">Sign By Me</option>
 
+                    {customerNames &&
+                      customerNames.map((item: any, i) => (
+                        <option key={i} value={i}>{item.customerId}</option>
+
+
+                      ))}
 
                   </select>
                 </div>
@@ -142,13 +281,18 @@ export default function CreateProductions() {
                     onChange={(e: React.FormEvent<HTMLSelectElement>) => {
                       console.log("e.currentTarget.value", e.currentTarget.value);
 
-                      setProductName(e.currentTarget.value)
+                      setProductName(parseInt(e.currentTarget.value))
 
                       // handleChange(e, props.id)
                     }}>
                     <option value="" disabled >Select Customer</option>
-                    <option value="ForSignature">For Signature</option>
-                    <option value="SignByMe">Sign By Me</option>
+
+                    {productNames &&
+                      productNames.map((item: any, i) => (
+                        <option key={i} value={i}>{item.productName}</option>
+
+
+                      ))}
 
 
                   </select>
@@ -209,25 +353,7 @@ export default function CreateProductions() {
                   />
                 </div>
               </div>
-              <div className="w-full lg:w-6/12 px-4">
-                <div className="relative w-full mb-3">
-                  <label
-                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                    htmlFor="grid-password"
-                  >
-                    Product Name
 
-                  </label>
-                  <input
-                    type="text"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    defaultValue=""
-                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                      setProductName(e.currentTarget.value);
-                    }}
-                  />
-                </div>
-              </div>
 
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">

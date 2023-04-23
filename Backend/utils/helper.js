@@ -27,7 +27,7 @@ let getDataFromMongoDB = async (client, collectionName, findRequest, res) => {
   response.status = 200;
   response.data = apiConfig;
   return response;
-}
+};
 async function validation(schema, data, res) {
   let validateApi = ajv.compile(schema);
   let validAPI = validateApi(data);
@@ -46,14 +46,14 @@ async function validation(schema, data, res) {
   }
 }
 module.exports.init = async (req, res, mathodeType) => {
-  console.log("------> req.query.data", req);
+  // console.log("------> req.query.data", req);
 
   let collrollerObject = new CollrollerObject();
   try {
     if (mathodeType == "POST") {
       collrollerObject.requestData = JSON.parse(req.body.data);
     } else {
-      console.log("------> req.query.data", req.query);
+      // console.log("------> req.query.data", req.query);
       collrollerObject.requestData = JSON.parse(req.query.data);
     }
   } catch (error) {
@@ -123,8 +123,8 @@ module.exports.init = async (req, res, mathodeType) => {
 };
 module.exports.initQueue = async (data, res, mathodeType) => {
   let collrollerObject = new CollrollerObject();
-  console.log('JSON.parse(data)', typeof (data));
-  collrollerObject.requestData = JSON.parse(data)
+  console.log("JSON.parse(data)", typeof data);
+  collrollerObject.requestData = JSON.parse(data);
   // try {
   //   if (mathodeType == "POST") {
   //     collrollerObject.requestData = JSON.parse(req.body.data);
@@ -205,17 +205,16 @@ module.exports.initQueue = async (data, res, mathodeType) => {
 module.exports.loadMongo = async () => {
   client = await connectMongoDB(
     "mongodb://" +
-    configObj.MONGO_USER +
-    ":" +
-    configObj.MONGO_PASS +
-    "@" +
-    configObj.MONGO_ADDRESS +
-    ":" +
-    configObj.MONGO_PORT
+      configObj.MONGO_USER +
+      ":" +
+      configObj.MONGO_PASS +
+      "@" +
+      configObj.MONGO_ADDRESS +
+      ":" +
+      configObj.MONGO_PORT
   );
   return client;
-}
+};
 // loadMongo();
 
-module.exports.getDataFromMongoDBExternal = getDataFromMongoDB
-
+module.exports.getDataFromMongoDBExternal = getDataFromMongoDB;

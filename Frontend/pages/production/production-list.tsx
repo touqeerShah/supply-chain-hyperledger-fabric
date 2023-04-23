@@ -18,9 +18,9 @@ export default function VerifyId() {
   return (
     <>
       <div className="flex flex-wrap">
-        <div className="w-full lg:w-8/12 px-4">
+        <div className="w-full lg:w-10/12 px-4">
           <CreateAllProductions
-
+            pageTitle={"Product list"}
           />
         </div>
       </div>

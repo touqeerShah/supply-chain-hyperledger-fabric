@@ -34,6 +34,7 @@ export class ProductionFinishedArg {
     isComplete: boolean
     mfgDate: string
     expDate: string
+    issuedByDate: string
     QAckhDate: string
 }
 export class ProductionEntityCount {

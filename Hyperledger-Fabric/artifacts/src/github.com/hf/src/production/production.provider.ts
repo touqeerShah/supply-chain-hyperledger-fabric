@@ -238,7 +238,7 @@ export class ProductionProvider {
         productionData.isComplete = productionFinishedArg.isComplete
         productionData.mfgDate = productionFinishedArg.mfgDate
         productionData.expDate = productionFinishedArg.expDate
-        productionData.issuedByDate = await this.productionRepository.userId()
+        productionData.issuedByDate = productionFinishedArg.issuedByDate
         productionData.QAckhDate = productionFinishedArg.QAckhDate
 
         response = await this.productionValidators.update(productionData);

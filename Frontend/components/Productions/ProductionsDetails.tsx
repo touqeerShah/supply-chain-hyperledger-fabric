@@ -1,12 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { ellipseAddress } from '../../lib/utilities'
 import { faClockRotateLeft, faBan, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
+import * as Yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import { post } from "../../utils";
+import { Response } from "../../class/backendRequest";
+import { useRouter } from 'next/router'
 
 export default function ProductionsDetails({ showModal, color, setShowModal, ProductionsEntity }: any) {
-  let [spinnerProcess, setSpinnerProcess] = useState(false);
+  console.log("ProductionsEntity.startProductionDate", ProductionsEntity.startProductionDate);
+  const router = useRouter()
 
+  let [spinnerProcess, setSpinnerProcess] = useState(false);
+  const validationSchema = Yup.object().shape({
+    // image: Yup.string().required("NFG image is required"),
+  });
+  const formOptions = { resolver: yupResolver(validationSchema) };
+  const { register, handleSubmit, formState } = useForm(formOptions);
   // here we check token is not expired
   let [startProductionDate, setStartProductionDate] = useState("")
   let [mixTheOil, setMixTheOil] = useState("")
@@ -19,6 +32,85 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
   let [expDate, setExpDate] = useState("")
   let [issuedByDate, setIssuedByDate] = useState("")
   let [QAckhDate, setQAckhDate] = useState("")
+
+  let [isSubmited, setIsSubmited] = useState(false)
+  const submit = useCallback(async function () {
+
+    setIsSubmited(true)
+    if (startProductionDate != "" && startProductionDate != "" && mixTheOil != "" && fillBottle != "" && sprayCoileer != "" && barcode != "" && batchSize != "" && mfgDate != "" && issuedByDate != "" && QAckhDate != "") {
+      try {
+        setSpinnerProcess(true)
+
+
+        let response: Partial<Response> = await post("api/get", {
+          data: JSON.stringify({
+            transactionCode: "002",
+            apiName: "existsProduction",
+            parameters: {
+              batchesNumber: ProductionsEntity.batchesNumber,
+            },
+            userId: "user2",
+            organization: "org1"
+          })
+        });
+        console.log("response", response);
+        if (response.status === 200 && response.data) {
+          response = await post("api/addQueue", {
+            data: JSON.stringify({
+              transactionCode: "002",
+              apiName: "finishProduct",
+              parameters: {
+                batchesNumber: ProductionsEntity.batchesNumber,
+                startProductionDate: startProductionDate,
+                mixTheOil: mixTheOil,
+                fillBottle: fillBottle,
+                sprayCoileer: sprayCoileer,
+                barcode: barcode,
+                batchSize: batchSize,
+                isComplete: isComplete == "false" ? false : true,
+                mfgDate: mfgDate,
+                expDate: expDate,
+                issuedByDate: issuedByDate,
+                QAckhDate: QAckhDate
+              },
+              userId: "user2",
+              organization: "org1"
+            })
+          });
+          console.log("response", response);
+
+          if (response.status === 200) {
+            // toast.success("Successfully Created !")
+            // router.reload()
+          } else {
+            toast.error(response.message)
+            setSpinnerProcess(false)
+
+          }
+
+        } else {
+          toast.error(response.message)
+          setSpinnerProcess(false)
+          setIsSubmited(false)
+
+        }
+
+      } catch (error: any) {
+        console.log(error);
+        setIsSubmited(false)
+        setSpinnerProcess(false)
+        toast.error("Server Issue")
+
+        return;
+      }
+    } else {
+      toast.warning("All Fields are Required")
+    }
+
+
+  }, [startProductionDate, mixTheOil, fillBottle, sprayCoileer, barcode, batchSize, isComplete, mfgDate, expDate, issuedByDate, QAckhDate]);
+
+
   return (
     <>
 
@@ -69,14 +161,14 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Raw Material Id  : {ProductionsEntity.batchesNumber}
+                            Batches Number  : {ProductionsEntity?.batchesNumber}
                           </td>
                           <td className={
                             "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Purchase Order Number  :                {ProductionsEntity.productionDepartmentEmployerName}
+                            Production Department Employer Name  :                {ProductionsEntity?.productionDepartmentEmployerName}
 
                           </td>
 
@@ -88,14 +180,14 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Customer Name : {ProductionsEntity.customerName}
+                            Customer Name : {ProductionsEntity?.customerName}
                           </td>
                           <td className={
                             "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left  font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Product Name  :{ProductionsEntity.productName}
+                            Product Name  :{ProductionsEntity?.productName}
                           </td>
 
                         </tr>
@@ -107,7 +199,7 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Glass Number :{ProductionsEntity.warehouseDeptEmployerName}
+                            Warehouse Dept Employer Name :{ProductionsEntity?.warehouseDeptEmployerName}
                           </td>
                           <td className={
                             "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
@@ -126,102 +218,102 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Spray and Koller Number :{ProductionsEntity.purchaseOrderNumber}
+                            Purchase Order Number :{ProductionsEntity.purchaseOrderNumber}
                           </td>
-                          <td className={
+                          {ProductionsEntity.startProductionDate && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Cover Number:  {ProductionsEntity.startProductionDate}
+                            Start Production Date:  {ProductionsEntity.startProductionDate}
                           </td>
-
+                          }
                         </tr>
                         <tr>
 
-                          <td className={
+                          {ProductionsEntity.mixTheOil && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Sticker And Barcode :{ProductionsEntity.mixTheOil}
-                          </td>
-                          <td className={
+                            Mix The Oil :{ProductionsEntity.mixTheOil}
+                          </td>}
+                          {ProductionsEntity.fillBottle && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Carton Or BoxNumber:  {ProductionsEntity.fillBottle}
-                          </td>
+                            Fill Bottle:  {ProductionsEntity.fillBottle}
+                          </td>}
 
                         </tr>
                         <tr>
 
-                          <td className={
+                          {ProductionsEntity.sprayCoileer && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            RawMaterial Note :{ProductionsEntity.sprayCoileer}
-                          </td>
-                          <td className={
+                            Spray Coileer :{ProductionsEntity.sprayCoileer}
+                          </td>}
+                          {ProductionsEntity.batchSize && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            RawMaterial Note :{ProductionsEntity.batchSize}
-                          </td>
+                            Batch Size :{ProductionsEntity.batchSize}
+                          </td>}
                         </tr>
                         <tr>
 
-                          <td className={
+                          {ProductionsEntity.barcode && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Receiver Note :{ProductionsEntity.barcode}
-                          </td>
-                          <td className={
+                            Barcode :{ProductionsEntity.barcode}
+                          </td>}
+                          {ProductionsEntity.isComplete && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Receiver Note :{ProductionsEntity.isComplete}
-                          </td>
+                            IsComplete :{ProductionsEntity.isComplete}
+                          </td>}
                         </tr>
                         <tr>
 
-                          <td className={
+                          {ProductionsEntity.mfgDate && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Receiver Note :{ProductionsEntity.mfgDate}
-                          </td>
-                          <td className={
+                            Mfg Date :{ProductionsEntity.mfgDate}
+                          </td>}
+                          {ProductionsEntity.expDate && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Receiver Note :{ProductionsEntity.expDate}
-                          </td>
+                            Exp Date :{ProductionsEntity.expDate}
+                          </td>}
                         </tr>
                         <tr>
 
-                          <td className={
+                          {ProductionsEntity.issuedByDate && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Receiver Note :{ProductionsEntity.issuedByDate}
-                          </td>
-                          <td className={
+                            Issued By Date :{ProductionsEntity.issuedByDate}
+                          </td>}
+                          {ProductionsEntity.QAckhDate && <td className={
                             "px-6 align-middle border border-solid py-3 text-xs border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
                             (color === "light"
                               ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
                             Receiver Note :{ProductionsEntity.QAckhDate}
-                          </td>
+                          </td>}
                         </tr>
 
                         <tr>
@@ -234,29 +326,6 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                               : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
                             Created By :{ProductionsEntity.createdBy}
                           </td>
-                          <td className={
-                            "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
-                            (color === "light"
-                              ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                              : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
-                            Updated By :{ProductionsEntity.updatedBy}
-
-                          </td>
-
-                        </tr>
-
-
-                        <tr>
-                          <th
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            Updated At : {ProductionsEntity.updatedAt}
-                          </th>
                           <th
                             className={
                               "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
@@ -270,9 +339,18 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
 
                         </tr>
 
+
                         <tr>
+
+                          <td className={
+                            "px-6 align-middle border border-solid py-3 text-xs  border-l-0 border-r-0 whitespace-nowrap  text-left font-bold " +
+                            (color === "light"
+                              ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+                              : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")}>
+                            Updated By :{ProductionsEntity.updatedBy}
+
+                          </td>
                           <th
-                            colSpan={2}
                             className={
                               "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
                               (color === "light"
@@ -280,7 +358,24 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
                             }
                           >
-                            <div className="w-full lg:w-6/12 px-4">
+                            Updated At : {ProductionsEntity.updatedAt}
+                          </th>
+
+                        </tr>
+
+
+                      </tbody>
+                    </table>
+                    <form
+                      id="create-choose-type-single"
+                      onSubmit={handleSubmit(submit)}
+                    >
+                      {!ProductionsEntity.startProductionDate &&
+
+                        <>
+                          <div className="flex pt-8 flex-wrap">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -298,7 +393,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -316,20 +412,10 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                          </th>
-                        </tr>
 
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="w-full lg:w-6/12 px-4">
+
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -347,7 +433,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -356,7 +443,7 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                   Spray Coileer
                                 </label>
                                 <input
-                                  type="date"
+                                  type="text"
                                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                   defaultValue=""
                                   onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -365,19 +452,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                          </th>
-                        </tr>
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -386,7 +462,7 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                   Barcode
                                 </label>
                                 <input
-                                  type="date"
+                                  type="text"
                                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                   defaultValue=""
                                   onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -395,16 +471,17 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                                   htmlFor="grid-password"
                                 >
-                                  BatchSize
+                                  Batch Size
                                 </label>
                                 <input
-                                  type="date"
+                                  type="text"
                                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                   defaultValue=""
                                   onChange={(e: React.FormEvent<HTMLInputElement>) => {
@@ -413,19 +490,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                          </th>
-                        </tr>
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -433,17 +499,27 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 >
                                   IsComplete
                                 </label>
-                                <input
-                                  type="boolean"
-                                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                                  defaultValue=""
-                                  onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                                    setIsComplete(e.currentTarget.value);
-                                  }}
-                                />
+
+                                <select className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                                  name="lunchStatus" id="challenge"
+
+                                  onChange={(e: React.FormEvent<HTMLSelectElement>) => {
+                                    console.log("e.currentTarget.value", e.currentTarget.value);
+
+                                    setIsComplete((e.currentTarget.value))
+
+                                    // handleChange(e, props.id)
+                                  }}>
+                                  <option value="" disabled >Select Is Completed</option>
+                                  <option value={"false"}  >No</option>
+                                  <option value={"true"}  >Yes</option>
+
+
+                                </select>
                               </div>
                             </div>
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -461,19 +537,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                          </th>
-                        </tr>
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -491,7 +556,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -509,19 +575,8 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                                 />
                               </div>
                             </div>
-                          </th>
-                        </tr>
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="w-full lg:w-6/12 px-4">
+
+                            <div className="w-full lg:w-6/12 px-4 ">
                               <div className="relative w-full mb-3">
                                 <label
                                   className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -540,41 +595,28 @@ export default function ProductionsDetails({ showModal, color, setShowModal, Pro
                               </div>
                             </div>
 
-                          </th>
-                        </tr>
-                        <tr>
-                          <th
-                            colSpan={2}
-                            className={
-                              "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
-                              (color === "light"
-                                ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
-                                : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
-                            }
-                          >
-                            <div className="flex items-center justify-center flex-wrap">
-                              <div className="w-3/12  lg:w-12/12 px-4">
-                                <div className="relative  center mb-3">
-                                  <button
-                                    className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                                    type="submit"
-                                  >
-                                    {spinnerProcess && <FontAwesomeIcon icon={faSpinner} className="animate-spin" />} &nbsp;&nbsp;
+                          </div>
 
-                                    Updated
-                                  </button>
-                                </div>
+                          <div className="flex items-center justify-center flex-wrap">
+                            <div className="w-3/12  lg:w-12/12 px-4">
+                              <div className="relative  center mb-3">
+                                <button
+                                  className="border-0 px-3 px-2-5 my-4 placeholder-blueGray-300 text-blueGray-600 bg-white rounded border-2 text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                                  type="submit"
+                                  disabled={isSubmited}
+                                >
+
+                                  {spinnerProcess && <> <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> &nbsp;</>}
+
+                                  Update
+                                </button>
                               </div>
                             </div>
-                          </th>
+                          </div>
 
-
-                        </tr>
-
-
-                      </tbody>
-                    </table>
-
+                        </>
+                      }
+                    </form>
                   </div>
                 </div>
 

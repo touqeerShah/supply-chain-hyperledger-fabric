@@ -12,7 +12,7 @@ export class ProductionEntityValidation {
       date: Joi.string().required(),
       productionDepartmentEmployerName: Joi.string().required(),
       warehouseDeptEmployerName: Joi.string().required(),
-      PurchaseOrderNumber: Joi.string().required(),
+      purchaseOrderNumber: Joi.string().required(),
       customerName: Joi.string().required(),
       productName: Joi.string().required(),
     })
@@ -29,12 +29,11 @@ export class ProductionEntityValidation {
   }
   public async update(lot: ProductionEntity): Promise<ProductionEntity | string> {
     const schema = Joi.object().keys({
-      rawMaterialId: Joi.string().required(),
       batchesNumber: Joi.string().required(),
       date: Joi.string().required(),
       productionDepartmentEmployerName: Joi.string().required(),
       warehouseDeptEmployerName: Joi.string().required(),
-      PurchaseOrderNumber: Joi.string().required(),
+      purchaseOrderNumber: Joi.string().required(),
       customerName: Joi.string().required(),
       productName: Joi.string().required(),
     })
