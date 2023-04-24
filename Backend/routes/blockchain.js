@@ -3,14 +3,17 @@ const {
   register,
   insert,
   get,
-  enrollAdmin, addQueue
+  enrollAdmin,
+  addQueue,
 } = require("../controller/blockchainController");
+const { login } = require("../controller/auth");
+
 const router = express.Router();
 // following are the routes which we used to expose the  backend service
-router.post("/enrollAdmin", enrollAdmin);
-router.post("/register", register);
-router.post("/addQueue", addQueue);
-router.post("/insert", insert);
-router.post("/get", get);
+router.post("/enrollAdmin", verify, enrollAdmin);
+router.post("/register", verify, register);
+router.post("/addQueue", verify, addQueue);
+router.post("/insert", verify, insert);
+router.post("/get", verify, get);
 
 module.exports = router;
