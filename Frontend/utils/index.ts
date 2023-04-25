@@ -1,2 +1,2 @@
-export { get, post } from "./api-call";
+export { get, post, login } from "./api-call";
 

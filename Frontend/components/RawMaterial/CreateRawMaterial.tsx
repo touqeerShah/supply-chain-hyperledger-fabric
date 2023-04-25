@@ -44,7 +44,10 @@ export default function CreateRawMaterial() {
   const { register, handleSubmit, formState } = useForm(formOptions);
   useEffect(() => {
     let fetch = async () => {
-
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
 
       let response: Partial<Response> = await post("api/get", {
         data: JSON.stringify({
@@ -67,7 +70,7 @@ export default function CreateRawMaterial() {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       console.log("All customer ", response);
       if (response && response.data && response.status == 200) {
         response.data.pop()
@@ -109,7 +112,10 @@ export default function CreateRawMaterial() {
           rawMaterialNote: rawMaterialNote,
           receiverNote: ""
         });
-
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': "JWT " + localStorage.getItem("token")
+        }
         let response: Partial<Response> = await post("api/get", {
           data: JSON.stringify({
             transactionCode: "002",
@@ -120,7 +126,7 @@ export default function CreateRawMaterial() {
             userId: "user2",
             organization: "org1"
           })
-        });
+        }, { headers: headers });
         console.log("response", response);
         if (response.status === 200 && !response.data && customerNames) {
           response = await post("api/addQueue", {
@@ -144,7 +150,7 @@ export default function CreateRawMaterial() {
               userId: "user2",
               organization: "org1"
             })
-          });
+          }, { headers: headers });
           console.log("response", response);
 
           if (response.status === 200) {

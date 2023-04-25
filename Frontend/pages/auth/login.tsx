@@ -1,13 +1,60 @@
 import React from "react";
+import { useEffect, useCallback, useState } from "react";
+
 import Link from "next/link";
+// import * as bcrypt from 'bcrypt'
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
 // import '../globals.css'
 import { useRouter } from 'next/router'
 
 // layout for page
 
 import Auth from "../../layouts/Auth";
+import { Response } from "../../class/backendRequest";
+
+import { login } from "../../utils";
+import { toast } from "react-toastify";
 
 export default function Login() {
+  const router = useRouter()
+
+  const validationSchema = Yup.object().shape({
+    // image: Yup.string().required("NFG image is required"),
+  });
+  const formOptions = { resolver: yupResolver(validationSchema) };
+  const { register, handleSubmit, formState } = useForm(formOptions);
+  let [isSubmited, setIsSubmited] = useState(false)
+  let [email, setEmail] = useState("")
+  let [password, setPassword] = useState("")
+
+  const submit = useCallback(async function () {
+    let fetch = async () => {
+      setIsSubmited(true)
+      try {
+        let response: Partial<Response> = await login("auth/login", {
+          userid: email,
+          password: Buffer.from(password).toString('base64')
+        });
+        console.log("All customer ", response);
+        if (response && response.data && response.status == 200) {
+          localStorage.setItem("token", response.data.accessToken)
+          router.push("/")
+        } else {
+          setIsSubmited(false)
+          toast.warning(response.message)
+        }
+      } catch (e: any) {
+        setIsSubmited(false)
+        toast.error("Server error")
+      }
+    }
+    if (!isSubmited) {
+      fetch()
+    }
+  }, [email, password])
+
   return (
     <>
       <div className="container mx-auto px-4 h-full">
@@ -27,7 +74,10 @@ export default function Login() {
               </div>
               <div className="flex-auto px-4 pt-8 lg:px-10 py-10 pt-0">
 
-                <form>
+                <form
+                  id="create-choose-type-single"
+                  onSubmit={handleSubmit(submit)}
+                >
                   <div className="relative w-full mb-3">
                     <label
                       className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -36,9 +86,13 @@ export default function Login() {
                       Email
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                      placeholder="Email"
+                      placeholder=""
+                      required
+                      onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        setEmail(e.currentTarget.value);
+                      }}
                     />
                   </div>
 
@@ -53,27 +107,21 @@ export default function Login() {
                       type="password"
                       className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                       placeholder="Password"
+                      required
+                      onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        setPassword(e.currentTarget.value);
+                      }}
                     />
                   </div>
-                  {/* <div>
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        id="customCheckLogin"
-                        type="checkbox"
-                        className="form-checkbox border-0 rounded text-blueGray-700 ml-1 w-5 h-5 ease-linear transition-all duration-150"
-                      />
-                      <span className="ml-2 text-sm font-semibold text-blueGray-600">
-                        Remember me
-                      </span>
-                    </label>
-                  </div> */}
+
 
                   <div className="text-center mt-6">
                     <button
                       aria-label="Menu"
 
                       className="bg-blueGray-800 text-white active:bg-blueGray-600 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 w-full ease-linear transition-all duration-150"
-                      type="button"
+                      type="submit"
+                      disabled={isSubmited}
                     >
                       Log In
                     </button>
@@ -81,23 +129,7 @@ export default function Login() {
                 </form>
               </div>
             </div>
-            {/* <div className="flex flex-wrap mt-6 relative">
-              <div className="w-1/2">
-                <a
-                  href="#pablo"
-                  onClick={(e) => e.preventDefault()}
-                  className="text-blueGray-200"
-                >
-                  <small>Forgot password?</small>
-                </a>
-              </div>
-              <div className="w-1/2 text-right">
-                <Link href="/auth/register"
-                  className="text-blueGray-200">
-                  <small>Create new account</small>
-                </Link>
-              </div>
-            </div> */}
+
           </div>
         </div>
       </div>

@@ -54,7 +54,10 @@ export default function SearchRawMaterial() {
     if (startProductionDate != "" && startProductionDate != "" && mixTheOil != "" && fillBottle != "" && sprayCoileer != "" && barcode != "" && batchSize != "" && mfgDate != "" && issuedByDate != "" && QAckhDate != "") {
       try {
         setSpinnerProcess(true)
-
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': "JWT " + localStorage.getItem("token")
+        }
 
         let response: Partial<Response> = await post("api/get", {
           data: JSON.stringify({
@@ -66,7 +69,7 @@ export default function SearchRawMaterial() {
             userId: "user2",
             organization: "org1"
           })
-        });
+        }, { headers: headers });
         console.log("response", response);
         if (response.status === 200 && response.data) {
           response = await post("api/addQueue", {
@@ -90,7 +93,7 @@ export default function SearchRawMaterial() {
               userId: "user2",
               organization: "org1"
             })
-          });
+          }, { headers: headers });
           console.log("response", response);
 
           if (response.status === 200) {

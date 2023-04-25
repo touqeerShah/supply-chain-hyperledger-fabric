@@ -27,7 +27,10 @@ export default function RawMaterialDetails({ showModal, color, setShowModal, raw
     if (receiveNote != "") {
       try {
         setSpinnerProcess(true)
-
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': "JWT " + localStorage.getItem("token")
+        }
 
         let response: Partial<Response> = await post("api/get", {
           data: JSON.stringify({
@@ -39,7 +42,7 @@ export default function RawMaterialDetails({ showModal, color, setShowModal, raw
             userId: "user2",
             organization: "org1"
           })
-        });
+        }, { headers: headers });
         console.log(rawMaterialEntity.rawMaterialId, "response", response);
         if (response.status === 200 && response.data) {
           response = await post("api/addQueue", {
@@ -54,7 +57,7 @@ export default function RawMaterialDetails({ showModal, color, setShowModal, raw
               userId: "user2",
               organization: "org1"
             })
-          });
+          }, { headers: headers });
           console.log("response", response);
 
           if (response.status === 200) {

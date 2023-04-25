@@ -4,12 +4,14 @@ import { useRouter } from 'next/router'
 import { faBars, faBell } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CryptoJS from 'crypto-js';
+import * as bcrypt from 'bcrypt'
 
 import Link from "next/link";
 // components
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from "react-toastify";
 
+import { post } from "../../utils";
 
 
 import IndexDropdown from "../Dropdowns/IndexDropdown";
@@ -23,7 +25,7 @@ export default function Navbar(props: any) {
   let isRequest = false;
 
   const [navbarOpen, setNavbarOpen] = React.useState(false);
-  const [showModal, setShowModal] = React.useState(false);
+  const [isLogin, setIsLogin] = React.useState(false);
   const [pin, setPin] = React.useState("");
   const [checkPin, setCheckPin] = React.useState(false);
   const [isUserExist, setIsUserExist] = React.useState(false);
@@ -39,12 +41,34 @@ export default function Navbar(props: any) {
   }, [])
 
   const logout = useCallback(async function () {
-
+    localStorage.removeItem("token")
+    if (router.pathname.length == 1) {
+      router.reload()
+    } else {
+      router.push("/")
+    }
 
   }, [])
 
   useEffect(() => {
+    console.log("router.pathname", router.pathname);
 
+    let fetch = async () => {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
+      let response: Partial<Response> = await post("auth/verify", {}, { headers: headers }
+      );
+      if (response.status == 200) {
+        setIsLogin(true)
+      }
+    }
+    if (!isLogin && localStorage.getItem("token")) {
+      console.log("here");
+
+      fetch()
+    }
   }, [])
 
   return (
@@ -84,16 +108,16 @@ export default function Navbar(props: any) {
 
             </ul>
             <ul className="flex flex-col  lg:flex-row list-none lg:ml-auto">
-              {(router.pathname.indexOf("customer") == -1) && (router.pathname.indexOf("rawmaterial") == -1) && (router.pathname.indexOf("production") == -1) &&
+              {(isLogin && router.pathname.indexOf("customer") == -1) && (router.pathname.indexOf("rawmaterial") == -1) && (router.pathname.indexOf("production") == -1) &&
                 <li className="flex items-center">
                   <IndexDropdown />
                 </li>}
 
               <li className="flex items-center">
 
-                {false ? (
+                {isLogin ? (
                   <button className="bg-blueGray-700 text-white active:bg-blueGray-600 border-2 text-xs font-bold uppercase px-4 py-2 rounded shadow hover:shadow-lg outline-none focus:outline-none lg:mr-1 lg:mb-0 ml-3 mb-3 ease-linear transition-all duration-150"
-                    type="button" onClick={logout}>
+                    type="button" onClick={() => { logout() }}>
                     Logout
                   </button>
                 ) : (

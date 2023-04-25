@@ -6,7 +6,7 @@ const {
   enrollAdmin,
   addQueue,
 } = require("../controller/blockchainController");
-const { login } = require("../controller/auth");
+const { verify } = require("../controller/auth");
 
 const router = express.Router();
 // following are the routes which we used to expose the  backend service

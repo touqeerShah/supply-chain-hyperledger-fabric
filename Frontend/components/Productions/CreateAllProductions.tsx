@@ -41,6 +41,10 @@ export default function CreateAllProductions(props: any) {
 
   useEffect(() => {
     let fetch = async () => {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
       let response: Partial<Response> = await post("api/get", {
         data: JSON.stringify({
           transactionCode: "002",
@@ -51,7 +55,7 @@ export default function CreateAllProductions(props: any) {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       console.log("getProductionEntityCount", response);
 
       if (response.status === 200 && response.data.count > 0) {
@@ -86,7 +90,7 @@ export default function CreateAllProductions(props: any) {
             userId: "user2",
             organization: "org1"
           })
-        });
+        }, { headers: headers });
         console.log("All customer ", response);
         if (response.status == 200) {
           response.data.pop()

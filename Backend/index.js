@@ -3,6 +3,8 @@ var app = express(); // define our app using express
 var bodyParser = require("body-parser");
 var { configObj } = require("./config.js");
 var routes = require("./routes/blockchain");
+var auth = require("./routes/auth.js");
+
 const { loadMongo } = require("./utils/helper");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
@@ -83,6 +85,7 @@ app.use(function (req, res, next) {
 });
 
 app.use("/api", routes);
+app.use("/auth", auth);
 // app.use("/auth", routerAuth);
 
 /**

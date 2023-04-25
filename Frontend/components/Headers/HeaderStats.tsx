@@ -13,7 +13,10 @@ export default function HeaderStats() {
   const [pCount, setProductCount] = useState(0)
   useEffect(() => {
     let fetch = async () => {
-
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
       let response: Partial<Response> = await post("api/get", {
         data: JSON.stringify({
           transactionCode: "002",
@@ -24,7 +27,7 @@ export default function HeaderStats() {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       if (response.status === 200) {
         setProductCount(response.data.count)
       }
@@ -38,7 +41,7 @@ export default function HeaderStats() {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       if (response.status === 200) {
         setCustomerCount(response.data.count)
       }
@@ -52,7 +55,7 @@ export default function HeaderStats() {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       console.log("getRawMaterialEntityCount", response);
 
       if (response.status === 200) {

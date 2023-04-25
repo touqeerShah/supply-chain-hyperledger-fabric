@@ -29,7 +29,10 @@ export default function SearchCustomer() {
     try {
       setSpinnerProcess(true)
       console.log("customerId", customerId,);
-
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
       let response: Partial<Response> = await post("api/get", {
         data: JSON.stringify({
           transactionCode: "002",
@@ -40,7 +43,7 @@ export default function SearchCustomer() {
           userId: "user1",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       console.log("response", response);
       if (response.status === 200) {
         setCustomerDetails(response.data)

@@ -52,4 +52,27 @@ export async function post(api: string, args: any, header?: any) {
   }
 }
 
+/**
+ * This will help as to do all post call on backend
+ * @param {*} api
+ * @param {*} args
+ * @returns
+ */
+export async function login(api: string, args: any, header?: any) {
+  var response: Partial<Response> = {};
+
+  try {
+
+    const { data } = await axios.post(`${BACKEND_ENDPOINT}${api}`, args, header);
+    return data as Response;
+  } catch (err: any) {
+    console.log(err);
+    response.status = 400;
+    response.data = {};
+    response.message = err.toString();
+
+    return response;
+  }
+}
+
 
