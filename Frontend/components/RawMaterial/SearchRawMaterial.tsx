@@ -104,7 +104,10 @@ export default function SearchRawMaterial() {
     try {
       setSpinnerProcess(true)
       console.log("customerId", rawMaterialId,);
-
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': "JWT " + localStorage.getItem("token")
+      }
       let response: Partial<Response> = await post("api/get", {
         data: JSON.stringify({
           transactionCode: "002",
@@ -115,7 +118,7 @@ export default function SearchRawMaterial() {
           userId: "user2",
           organization: "org1"
         })
-      });
+      }, { headers: headers });
       console.log("response", response);
       if (response.status === 200) {
         setRawMaterialDetails(response.data)

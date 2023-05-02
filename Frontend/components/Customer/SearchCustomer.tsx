@@ -40,7 +40,7 @@ export default function SearchCustomer() {
           parameters: {
             customerId: customerId,
           },
-          userId: "user1",
+          userId: "user2",
           organization: "org1"
         })
       }, { headers: headers });

@@ -60,7 +60,7 @@ export default function CreateCustomer() {
           parameters: {
             customerId: customerId,
           },
-          userId: "user1",
+          userId: "user2",
           organization: "org1"
         })
       }, { headers: headers });
@@ -79,7 +79,7 @@ export default function CreateCustomer() {
               status: "Active",
               quantity: quantity
             },
-            userId: "user1",
+            userId: "user2",
             organization: "org1"
           })
         }, { headers: headers });

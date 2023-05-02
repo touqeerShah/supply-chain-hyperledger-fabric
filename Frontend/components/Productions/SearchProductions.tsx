@@ -97,8 +97,8 @@ export default function SearchRawMaterial() {
           console.log("response", response);
 
           if (response.status === 200) {
-            // toast.success("Successfully Created !")
-            // router.reload()
+            toast.success("Successfully Created !")
+            router.reload()
           } else {
             toast.error(response.message)
             setSpinnerProcess(false)
@@ -121,6 +121,7 @@ export default function SearchRawMaterial() {
         return;
       }
     } else {
+      setIsSubmited(false)
       toast.warning("All Fields are Required")
     }
 
@@ -132,6 +133,10 @@ export default function SearchRawMaterial() {
       if (production != "") {
         setSpinnerProcess(true)
 
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': "JWT " + localStorage.getItem("token")
+        }
 
         let response: Partial<Response> = await post("api/get", {
           data: JSON.stringify({
